@@ -5,6 +5,14 @@ import sys
 from random import choice
 import twitter
 
+api = twitter.Api(
+    consumer_key=os.environ["TWITTER_CONSUMER_KEY"],
+    consumer_secret=os.environ["TWITTER_CONSUMER_SECRET"],
+    access_token_key=os.environ["TWITTER_ACCESS_TOKEN_KEY"],
+    access_token_secret=os.environ["TWITTER_ACCESS_TOKEN_SECRET"])
+print api.VerifyCredentials()
+
+
 
 def open_and_read_file(filenames):
     """Take list of files. Open them, read them, and return one long string."""
@@ -56,9 +64,14 @@ def make_text(chains):
         word = choice(chains[key])
         words.append(word)
         key = (key[1], word)
+   
+    new_string = " ".join(words)
 
-    return " ".join(words)
-
+    while True:
+        if len(new_string) <= 140:
+            return new_string
+        else:
+            return new_string[:140]
 
 def tweet(chains):
     """Create a tweet and send it to the Internet."""
@@ -66,19 +79,34 @@ def tweet(chains):
     # Use Python os.environ to get at environmental variables
     # Note: you must run `source secrets.sh` before running this file
     # to make sure these environmental variables are set.
+    initial_tweet = api.PostUpdate(make_text(chains))
+    
+    while True:
+        user_tweet_again= raw_input("Enter to tweet again [q to quit] > ")
+        if user_tweet_again == "q":
+            return False
+        
+        new_tweet = make_text(chains)
+        #sends a tweet
+        status = api.PostUpdate(new_tweet)
+        print status.text
 
-    pass
+
 
 
 # Get the filenames from the user through a command line prompt, ex:
 # python markov.py green-eggs.txt shakespeare.txt
 filenames = sys.argv[1:]
+# print filenames
 
 # Open the files and turn them into one long string
 text = open_and_read_file(filenames)
 
 # Get a Markov chain
 chains = make_chains(text)
+# print chains
+
+tweet(chains)
 
 # Your task is to write a new function tweet, that will take chains as input
 # tweet(chains)
